@@ -2,7 +2,7 @@
 using Moq;
 using EncurtadorURLs.Services;
 using EncurtadorURLs.Data;
-using EncurtadorURLs.Models;                                                                                                                                                                          0000,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+using EncurtadorURLs.Models;
 
 namespace EncurtadorURLs.Tests.Services;
 
@@ -37,6 +37,9 @@ public class UrlsServiceTests
         Assert.NotNull(resultado);
         Assert.Equal(urlOriginal, resultado.OriginalUrl);
         Assert.False(string.IsNullOrEmpty(resultado.ShortCode));
+
+        // Verificação requerida pelo professor: garante que a URL foi salva no banco de dados
+        _mockContext.Verify(c => c.AddAsync(It.IsAny<UrlItem>()), Times.Once);
     }
 
     [Fact]
@@ -49,11 +52,33 @@ public class UrlsServiceTests
     }
 
     [Fact]
-    public async Task CreateShortUrlAsync_ComEsquemaInvalido_DeveLancarArgumentException()
+    public async Task CreateShortUrlAsync_ComUrlNula_DeveLancarArgumentException()
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.CreateShortUrlAsync(null)
+        );
+    }
+
+    [Fact]
+    public async Task CreateShortUrlAsync_ComEsquemaInvalido_DeveLancarArgumentException()
+    {
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
             () => _service.CreateShortUrlAsync("ftp://arquivo-invalido.com")
+        );
+    }
+
+    [Fact]
+    public async Task CreateShortUrlAsync_ComUrlMuitoLonga_DeveLancarArgumentException()
+    {
+        // Arrange
+        var urlGigante = "https://exemplo.com/" + new string('a', 2100);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.CreateShortUrlAsync(urlGigante)
         );
     }
 }
